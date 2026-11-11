@@ -36,6 +36,7 @@ func TestQueryComponentLogs(t *testing.T) {
 					req.StartTime == testStartTime &&
 					req.EndTime == testEndTime &&
 					req.SearchPhrase == "err" &&
+					req.ContainerName == "app" &&
 					len(req.LogLevels) == 1 && req.LogLevels[0] == logLevelError &&
 					req.Limit == 50 &&
 					req.SortOrder == sortOrderAsc
@@ -44,7 +45,7 @@ func TestQueryComponentLogs(t *testing.T) {
 
 		h := newTestMCPHandler(t, withLogsService(logsSvc))
 		_, err := h.QueryComponentLogs(ctx, testNamespace, testProject, testComponent, testEnvironment, "", false,
-			testStartTime, testEndTime, "err", []string{logLevelError}, 50, sortOrderAsc)
+			testStartTime, testEndTime, "err", "app", []string{logLevelError}, 50, sortOrderAsc)
 		require.NoError(t, err)
 	})
 
@@ -58,7 +59,7 @@ func TestQueryComponentLogs(t *testing.T) {
 
 		h := newTestMCPHandler(t, withLogsService(logsSvc))
 		_, err := h.QueryComponentLogs(ctx, testNamespace, testProject, testComponent, testEnvironment, "next", false,
-			testStartTime, testEndTime, "", nil, 0, "")
+			testStartTime, testEndTime, "", "", nil, 0, "")
 		require.NoError(t, err)
 	})
 
@@ -66,12 +67,13 @@ func TestQueryComponentLogs(t *testing.T) {
 		logsSvc := mocks.NewMockLogsQuerier(t)
 		logsSvc.EXPECT().
 			QueryLogs(mock.Anything, mock.MatchedBy(func(req *types.LogsQueryRequest) bool {
-				return req.Limit == 100 && req.SortOrder == sortOrderDesc && req.LogLevels != nil && len(req.LogLevels) == 0
+				return req.Limit == 100 && req.SortOrder == sortOrderDesc &&
+					req.LogLevels != nil && len(req.LogLevels) == 0 && req.ContainerName == ""
 			})).
 			Return(&types.LogsQueryResponse{}, nil)
 
 		h := newTestMCPHandler(t, withLogsService(logsSvc))
-		_, err := h.QueryComponentLogs(ctx, testNamespace, "", "", "", "", false, testStartTime, testEndTime, "", nil, 0, "")
+		_, err := h.QueryComponentLogs(ctx, testNamespace, "", "", "", "", false, testStartTime, testEndTime, "", "", nil, 0, "")
 		require.NoError(t, err)
 	})
 
@@ -81,7 +83,7 @@ func TestQueryComponentLogs(t *testing.T) {
 
 		h := newTestMCPHandler(t, withLogsService(logsSvc))
 		_, err := h.QueryComponentLogs(ctx, testNamespace, testProject, testComponent, testEnvironment, "", false,
-			testStartTime, testEndTime, "", nil, 10, sortOrderDesc)
+			testStartTime, testEndTime, "", "", nil, 10, sortOrderDesc)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "backend down")
 	})
@@ -102,13 +104,29 @@ func TestQueryWorkflowLogs(t *testing.T) {
 					w.WorkflowRunName == "run-1" &&
 					w.TaskName == "task-a" &&
 					req.StartTime == testStartTime &&
-					req.EndTime == testEndTime
+					req.EndTime == testEndTime &&
+					req.ContainerName == "worker"
 			})).
 			Return(&types.LogsQueryResponse{}, nil)
 
 		h := newTestMCPHandler(t, withLogsService(logsSvc))
 		_, err := h.QueryWorkflowLogs(ctx, testNamespace, "run-1", "task-a",
-			testStartTime, testEndTime, "", nil, 10, sortOrderDesc)
+			testStartTime, testEndTime, "", "worker", nil, 10, sortOrderDesc)
+		require.NoError(t, err)
+	})
+
+	t.Run("omitted container name stays empty", func(t *testing.T) {
+		logsSvc := mocks.NewMockLogsQuerier(t)
+		logsSvc.EXPECT().
+			QueryLogs(mock.Anything, mock.MatchedBy(func(req *types.LogsQueryRequest) bool {
+				return req.SearchScope != nil && req.SearchScope.Workflow != nil &&
+					req.ContainerName == ""
+			})).
+			Return(&types.LogsQueryResponse{}, nil)
+
+		h := newTestMCPHandler(t, withLogsService(logsSvc))
+		_, err := h.QueryWorkflowLogs(ctx, testNamespace, "run-1", "task-a",
+			testStartTime, testEndTime, "", "", nil, 10, sortOrderDesc)
 		require.NoError(t, err)
 	})
 }
