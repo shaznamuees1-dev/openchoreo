@@ -90,7 +90,7 @@ func NewMCPHandler(
 }
 
 func (h *MCPHandler) QueryComponentLogs(ctx context.Context, namespace, project, component, environment, releaseLine string, allReleaseLines bool,
-	startTime, endTime, searchPhrase string, logLevels []string, limit int, sortOrder string) (any, error) {
+	startTime, endTime, searchPhrase, containerName string, logLevels []string, limit int, sortOrder string) (any, error) {
 	limit, sortOrder, logLevels = setDefaults(limit, sortOrder, logLevels)
 	if err := validateTimeRange(startTime, endTime); err != nil {
 		return nil, err
@@ -106,19 +106,20 @@ func (h *MCPHandler) QueryComponentLogs(ctx context.Context, namespace, project,
 				AllReleaseLines: allReleaseLines,
 			},
 		},
-		StartTime:    startTime,
-		EndTime:      endTime,
-		SearchPhrase: searchPhrase,
-		LogLevels:    logLevels,
-		Limit:        limit,
-		SortOrder:    sortOrder,
+		StartTime:     startTime,
+		EndTime:       endTime,
+		SearchPhrase:  searchPhrase,
+		ContainerName: containerName,
+		LogLevels:     logLevels,
+		Limit:         limit,
+		SortOrder:     sortOrder,
 	}
 	resp, err := h.logsService.QueryLogs(ctx, req)
 	return auditedResult(ctx, resp, err)
 }
 
 func (h *MCPHandler) QueryWorkflowLogs(ctx context.Context, namespace, workflowRunName, taskName,
-	startTime, endTime, searchPhrase string, logLevels []string, limit int, sortOrder string) (any, error) {
+	startTime, endTime, searchPhrase, containerName string, logLevels []string, limit int, sortOrder string) (any, error) {
 	limit, sortOrder, logLevels = setDefaults(limit, sortOrder, logLevels)
 	if err := validateTimeRange(startTime, endTime); err != nil {
 		return nil, err
@@ -131,12 +132,13 @@ func (h *MCPHandler) QueryWorkflowLogs(ctx context.Context, namespace, workflowR
 				TaskName:        taskName,
 			},
 		},
-		StartTime:    startTime,
-		EndTime:      endTime,
-		SearchPhrase: searchPhrase,
-		LogLevels:    logLevels,
-		Limit:        limit,
-		SortOrder:    sortOrder,
+		StartTime:     startTime,
+		EndTime:       endTime,
+		SearchPhrase:  searchPhrase,
+		ContainerName: containerName,
+		LogLevels:     logLevels,
+		Limit:         limit,
+		SortOrder:     sortOrder,
 	}
 	resp, err := h.logsService.QueryLogs(ctx, req)
 	return auditedResult(ctx, resp, err)

@@ -84,7 +84,7 @@ func registerTools(s *mcpsdk.Server, handler *MCPHandler) {
 	// Tool 1: query_component_logs
 	mcpsdk.AddTool(s, &mcpsdk.Tool{
 		Name:        "query_component_logs",
-		Description: "Query runtime application logs for components (services, APIs, workers, scheduled tasks) deployed in OpenChoreo. Supports filtering by project, component, environment, time range, log levels, and search phrases.",
+		Description: "Query runtime application logs for components (services, APIs, workers, scheduled tasks) deployed in OpenChoreo. Supports filtering by project, component, environment, time range, log levels, search phrases, and container name. Container filtering depends on adapter support; unsupported adapters may ignore it.",
 		InputSchema: createSchema(map[string]any{
 			"namespace":         stringProperty("Namespace (required)"),
 			"project":           stringProperty("Project name to filter logs"),
@@ -95,6 +95,7 @@ func registerTools(s *mcpsdk.Server, handler *MCPHandler) {
 			"start_time":        stringProperty("Start of time range in RFC3339 format (e.g., 2025-11-04T08:29:02.452Z)"),
 			"end_time":          stringProperty("End of time range in RFC3339 format (e.g., 2025-11-04T09:29:02.452Z)"),
 			"search_phrase":     stringProperty("Text to search within log messages"),
+			"container_name":    stringProperty("Container name to filter logs. Requires adapter support; unsupported adapters may ignore this filter."),
 			"log_levels":        arrayProperty("Log levels to filter (e.g., ['ERROR', 'WARN', 'INFO', 'DEBUG']). Default: all levels"),
 			"limit":             limitLogsProperty(),
 			"sort_order":        sortOrderProperty(),
@@ -109,6 +110,7 @@ func registerTools(s *mcpsdk.Server, handler *MCPHandler) {
 		StartTime       string   `json:"start_time"`
 		EndTime         string   `json:"end_time"`
 		SearchPhrase    string   `json:"search_phrase"`
+		ContainerName   string   `json:"container_name"`
 		LogLevels       []string `json:"log_levels"`
 		Limit           int      `json:"limit"`
 		SortOrder       string   `json:"sort_order"`
@@ -118,7 +120,7 @@ func registerTools(s *mcpsdk.Server, handler *MCPHandler) {
 		}
 		result, err := handler.QueryComponentLogs(ctx,
 			args.Namespace, args.Project, args.Component, args.Environment, args.ReleaseLine, args.AllReleaseLines,
-			args.StartTime, args.EndTime, args.SearchPhrase,
+			args.StartTime, args.EndTime, args.SearchPhrase, args.ContainerName,
 			args.LogLevels, args.Limit, args.SortOrder,
 		)
 		return handler.handleToolResult(req, result, err)
@@ -127,7 +129,7 @@ func registerTools(s *mcpsdk.Server, handler *MCPHandler) {
 	// Tool 2: query_workflow_logs
 	mcpsdk.AddTool(s, &mcpsdk.Tool{
 		Name:        "query_workflow_logs",
-		Description: "Query CI/CD workflow run logs in OpenChoreo. Captures build, test, and deployment pipeline execution details. Supports filtering by workflow run name and task name.",
+		Description: "Query CI/CD workflow run logs in OpenChoreo. Captures build, test, and deployment pipeline execution details. Supports filtering by workflow run name, task name, and container name. Container filtering depends on adapter support; unsupported adapters may ignore it.",
 		InputSchema: createSchema(map[string]any{
 			"namespace":         stringProperty("Namespace (required)"),
 			"workflow_run_name": stringProperty("Workflow run name to filter logs for a specific CI/CD run"),
@@ -135,6 +137,7 @@ func registerTools(s *mcpsdk.Server, handler *MCPHandler) {
 			"start_time":        stringProperty("Start of time range in RFC3339 format (e.g., 2025-11-04T08:29:02.452Z)"),
 			"end_time":          stringProperty("End of time range in RFC3339 format (e.g., 2025-11-04T09:29:02.452Z)"),
 			"search_phrase":     stringProperty("Text to search within log messages"),
+			"container_name":    stringProperty("Container name to filter logs. Requires adapter support; unsupported adapters may ignore this filter."),
 			"log_levels":        arrayProperty("Log levels to filter (e.g., ['ERROR', 'WARN', 'INFO', 'DEBUG']). Default: all levels"),
 			"limit":             limitLogsProperty(),
 			"sort_order":        sortOrderProperty(),
@@ -146,13 +149,14 @@ func registerTools(s *mcpsdk.Server, handler *MCPHandler) {
 		StartTime       string   `json:"start_time"`
 		EndTime         string   `json:"end_time"`
 		SearchPhrase    string   `json:"search_phrase"`
+		ContainerName   string   `json:"container_name"`
 		LogLevels       []string `json:"log_levels"`
 		Limit           int      `json:"limit"`
 		SortOrder       string   `json:"sort_order"`
 	}) (*mcpsdk.CallToolResult, any, error) {
 		result, err := handler.QueryWorkflowLogs(ctx,
 			args.Namespace, args.WorkflowRunName, args.TaskName,
-			args.StartTime, args.EndTime, args.SearchPhrase,
+			args.StartTime, args.EndTime, args.SearchPhrase, args.ContainerName,
 			args.LogLevels, args.Limit, args.SortOrder,
 		)
 		return handler.handleToolResult(req, result, err)

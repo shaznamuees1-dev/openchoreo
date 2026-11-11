@@ -612,18 +612,19 @@ var allToolSpecs = []toolTestSpec{
 		descriptionKeywords: []string{"component", "logs"},
 		descriptionMinLen:   20,
 		requiredParams:      []string{"namespace", "start_time", "end_time"},
-		optionalParams:      []string{"project", "component", "environment", "search_phrase", "log_levels", "limit", "sort_order"},
+		optionalParams:      []string{"project", "component", "environment", "search_phrase", "container_name", "log_levels", "limit", "sort_order"},
 		testArgs: map[string]any{
-			"namespace":     testNamespace,
-			"project":       testProject,
-			"component":     testComponent,
-			"environment":   testEnvironment,
-			"start_time":    testStartTime,
-			"end_time":      testEndTime,
-			"search_phrase": "error",
-			"log_levels":    []any{logLevelError, logLevelWarn},
-			"limit":         50,
-			"sort_order":    sortOrderAsc,
+			"namespace":      testNamespace,
+			"project":        testProject,
+			"component":      testComponent,
+			"environment":    testEnvironment,
+			"start_time":     testStartTime,
+			"end_time":       testEndTime,
+			"search_phrase":  "error",
+			"container_name": "app",
+			"log_levels":     []any{logLevelError, logLevelWarn},
+			"limit":          50,
+			"sort_order":     sortOrderAsc,
 		},
 		validateCall: func(t *testing.T, svcs *testServices) {
 			t.Helper()
@@ -639,6 +640,7 @@ var allToolSpecs = []toolTestSpec{
 			assert.Equal(t, testStartTime, req.StartTime)
 			assert.Equal(t, testEndTime, req.EndTime)
 			assert.Equal(t, "error", req.SearchPhrase)
+			assert.Equal(t, "app", req.ContainerName)
 			if diff := cmp.Diff([]string{logLevelError, logLevelWarn}, req.LogLevels); diff != "" {
 				t.Errorf("log_levels mismatch (-want +got):\n%s", diff)
 			}
@@ -651,7 +653,7 @@ var allToolSpecs = []toolTestSpec{
 		descriptionKeywords: []string{"workflow", "logs"},
 		descriptionMinLen:   20,
 		requiredParams:      []string{"namespace", "start_time", "end_time"},
-		optionalParams:      []string{"workflow_run_name", "task_name", "search_phrase", "log_levels", "limit", "sort_order"},
+		optionalParams:      []string{"workflow_run_name", "task_name", "search_phrase", "container_name", "log_levels", "limit", "sort_order"},
 		testArgs: map[string]any{
 			"namespace":         testNamespace,
 			"workflow_run_name": "my-workflow-run",
@@ -659,6 +661,7 @@ var allToolSpecs = []toolTestSpec{
 			"start_time":        testStartTime,
 			"end_time":          testEndTime,
 			"search_phrase":     "failed",
+			"container_name":    "worker",
 			"log_levels":        []any{logLevelError},
 			"limit":             75,
 			"sort_order":        sortOrderDesc,
@@ -674,6 +677,7 @@ var allToolSpecs = []toolTestSpec{
 			assert.Equal(t, "my-workflow-run", scope.WorkflowRunName)
 			assert.Equal(t, "build-step", scope.TaskName)
 			assert.Equal(t, "failed", req.SearchPhrase)
+			assert.Equal(t, "worker", req.ContainerName)
 			if diff := cmp.Diff([]string{logLevelError}, req.LogLevels); diff != "" {
 				t.Errorf("log_levels mismatch (-want +got):\n%s", diff)
 			}
@@ -2050,16 +2054,17 @@ func TestSchemaPropertyTypes(t *testing.T) {
 
 	expectedTypes := map[string]map[string]string{
 		"query_component_logs": {
-			"namespace":     "string",
-			"project":       "string",
-			"component":     "string",
-			"environment":   "string",
-			"start_time":    "string",
-			"end_time":      "string",
-			"search_phrase": "string",
-			"log_levels":    "array",
-			"limit":         "number",
-			"sort_order":    "string",
+			"namespace":      "string",
+			"project":        "string",
+			"component":      "string",
+			"environment":    "string",
+			"start_time":     "string",
+			"end_time":       "string",
+			"search_phrase":  "string",
+			"container_name": "string",
+			"log_levels":     "array",
+			"limit":          "number",
+			"sort_order":     "string",
 		},
 		"query_workflow_logs": {
 			"namespace":         "string",
@@ -2068,6 +2073,7 @@ func TestSchemaPropertyTypes(t *testing.T) {
 			"start_time":        "string",
 			"end_time":          "string",
 			"search_phrase":     "string",
+			"container_name":    "string",
 			"log_levels":        "array",
 			"limit":             "number",
 			"sort_order":        "string",
